@@ -1,6 +1,7 @@
 import express from "express";
 import path from "path";
 import dotenv from "dotenv";
+import fs from "fs";
 import { GoogleGenAI, Type } from "@google/genai";
 import { createServer as createViteServer } from "vite";
 
@@ -10,6 +11,30 @@ const app = express();
 const PORT = 3000;
 
 app.use(express.json());
+
+// Persistent store for custom curricula
+const CURRICULUMS_FILE = path.join(process.cwd(), "custom_curriculums.json");
+let globalCustomCurriculums: any[] = [];
+
+try {
+  if (fs.existsSync(CURRICULUMS_FILE)) {
+    const fileData = fs.readFileSync(CURRICULUMS_FILE, "utf-8");
+    if (fileData.trim()) {
+      globalCustomCurriculums = JSON.parse(fileData);
+      console.log(`Loaded ${globalCustomCurriculums.length} custom plans from disk.`);
+    }
+  }
+} catch (loadErr) {
+  console.error("Failed to load local custom_curriculums.json:", loadErr);
+}
+
+function saveCurriculumsToDisk() {
+  try {
+    fs.writeFileSync(CURRICULUMS_FILE, JSON.stringify(globalCustomCurriculums, null, 2), "utf-8");
+  } catch (saveErr) {
+    console.error("Failed to save custom curriculums to disk:", saveErr);
+  }
+}
 
 // Initialize Gemini SDK with User-Agent header for telemetry
 const ai = new GoogleGenAI({
@@ -607,6 +632,29 @@ app.post("/api/gemini/generate-curriculum", async (req, res) => {
       res.status(500).json({ error: "فشل ابتكار المنهج الدراسي بالكامل، يرجى المحاولة لاحقاً" });
     }
   }
+});
+
+// Endpoint to fetch all persistent saved custom curriculums
+app.get("/api/gemini/curriculums", (req, res) => {
+  res.json(globalCustomCurriculums);
+});
+
+// Endpoint to save or update any dynamically generated custom curriculum to preserve across all links/devices
+app.post("/api/gemini/save-curriculum", (req, res) => {
+  const { curriculum } = req.body;
+  if (!curriculum || !curriculum.id) {
+    return res.status(400).json({ error: "المنهج غير مكتمل أو غير صالح" });
+  }
+
+  const index = globalCustomCurriculums.findIndex(c => c.id === curriculum.id);
+  if (index !== -1) {
+    globalCustomCurriculums[index] = curriculum;
+  } else {
+    globalCustomCurriculums.unshift(curriculum);
+  }
+
+  saveCurriculumsToDisk();
+  res.json({ success: true, count: globalCustomCurriculums.length });
 });
 
 // Configure Vite middleware / Serve static files

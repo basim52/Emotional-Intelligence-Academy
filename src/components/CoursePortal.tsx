@@ -162,6 +162,40 @@ export default function CoursePortal() {
     }
   }, [customCurriculum]);
 
+  // Fetch globally saved custom curricula from the server so that they appear for everyone accessing the link
+  useEffect(() => {
+    const fetchSharedCurriculums = async () => {
+      try {
+        const response = await fetch("/api/gemini/curriculums");
+        if (response.ok) {
+          const serverCurriculums = await response.json();
+          if (Array.isArray(serverCurriculums) && serverCurriculums.length > 0) {
+            setCustomCurriculums(prev => {
+              const merged = [...serverCurriculums];
+              prev.forEach(p => {
+                if (!merged.some(m => m.id === p.id)) {
+                  merged.push(p);
+                }
+              });
+              return merged;
+            });
+            
+            // Safe state setter update to determine active ID without warning dependencies rules
+            setActiveCustomCurriculumId(currId => {
+              if (!currId && serverCurriculums.length > 0) {
+                return serverCurriculums[0].id;
+              }
+              return currId;
+            });
+          }
+        }
+      } catch (err) {
+        console.error("Failed to load custom curriculums from server:", err);
+      }
+    };
+    fetchSharedCurriculums();
+  }, []);
+
   // Determine chapters to use
   const chaptersToUse = activeCurriculum === "custom" && customCurriculum ? customCurriculum.chapters : courseChapters;
 
@@ -318,6 +352,18 @@ export default function CoursePortal() {
         setActiveLessonIdx(0);
         setShowQuizResult(false);
         setNewlyGeneratedCurriculum(newCurriculum);
+
+        // Save newly generated curriculum to the server database / JSON file so it appears for all users holding the links
+        try {
+          await fetch("/api/gemini/save-curriculum", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ curriculum: newCurriculum })
+          });
+          console.log("Custom curriculum saved successfully on the server.");
+        } catch (serverErr) {
+          console.error("Failed to automatically synchronize custom curriculum to server:", serverErr);
+        }
       } else {
         throw new Error("تنسيق المنهج المولّد غير صالح");
       }
