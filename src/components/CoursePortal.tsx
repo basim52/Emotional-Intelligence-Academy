@@ -578,7 +578,13 @@ export default function CoursePortal() {
               }}
             ></div>
 
-            <div className={`grid grid-cols-1 ${chaptersToUse.length === 3 ? "md:grid-cols-3" : "md:grid-cols-5"} gap-4 relative z-10`}>
+            {/* Slide guide hint on mobile only */}
+            <div className="md:hidden flex items-center justify-between text-[10px] text-gray-400 font-bold px-2 mb-2">
+              <span>← اسحب لليسار لعرض باقي الفصول التعليمية →</span>
+              <span>الفصل الحالي: {safeChapterIdx + 1}</span>
+            </div>
+
+            <div className={`flex overflow-x-auto no-scrollbar pb-3 md:grid ${chaptersToUse.length === 3 ? "md:grid-cols-3" : "md:grid-cols-5"} gap-4 relative z-10 snap-x snap-mandatory scroll-smooth`}>
               {chaptersToUse.map((chap, idx) => {
                 const isActive = safeChapterIdx === idx;
                 const completedLessonsInChap = chap.lessons.filter(l => completedLessons.includes(l.id)).length;
@@ -593,7 +599,7 @@ export default function CoursePortal() {
                       setActiveLessonIdx(0);
                       setShowQuizResult(false);
                     }}
-                    className={`w-full text-right md:text-center p-4 rounded-2xl border transition-all duration-300 relative group ${
+                    className={`flex-shrink-0 snap-center w-[250px] md:w-full text-right md:text-center p-4 rounded-2xl border transition-all duration-300 relative group cursor-pointer ${
                       isActive
                         ? "bg-[#fffef9] border-[#d4a373] shadow-md ring-2 ring-[#d4a373]/10 scale-[1.02]"
                         : isCompleted
@@ -664,7 +670,7 @@ export default function CoursePortal() {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
           
           {/* RIGHT SIDEBAR: Curriculum Navigation and Chapters (4 cols) */}
-          <div className="lg:col-span-4 space-y-6">
+          <div className="lg:col-span-4 space-y-6 order-2 lg:order-1">
             
             <div className="bg-white border border-[#e0dcd2] rounded-3xl p-6 shadow-sm space-y-4">
               <div className="flex items-center justify-between border-b border-gray-100 pb-3">
@@ -820,7 +826,7 @@ export default function CoursePortal() {
           </div>
 
           {/* LEFT CHIEF CONTAINER: Main Content Reader or Quiz Engine (8 cols) */}
-          <div className="lg:col-span-8">
+          <div className="lg:col-span-8 order-1 lg:order-2">
             
             {/* 1. LESSON READER VIEW */}
             {activeLessonIdx !== null && currentLesson && (

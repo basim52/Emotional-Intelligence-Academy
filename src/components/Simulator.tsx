@@ -629,7 +629,7 @@ export default function Simulator() {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start animate-fade-in relative z-10">
           
           {/* Left Panel: Expert Cues, Help Box, and final Analysis (5 cols) */}
-          <div className="lg:col-span-5 space-y-6">
+          <div className="lg:col-span-5 space-y-6 order-2 lg:order-1">
             
             {/* Back Button */}
             <button
@@ -811,7 +811,7 @@ export default function Simulator() {
           </div>
 
           {/* Right Panel: Active Chat Workspace container (7 cols) */}
-          <div className="lg:col-span-7 space-y-4">
+          <div className="lg:col-span-7 space-y-4 order-1 lg:order-2">
             
             <div className="bg-white border border-[#e0dcd2] rounded-3xl shadow-xs overflow-hidden flex flex-col h-[550px]">
               
