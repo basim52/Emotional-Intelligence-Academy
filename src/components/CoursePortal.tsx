@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 import { courseChapters } from "../data/lessonsData";
 import { CourseChapter, CourseLesson, QuizQuestion } from "../types";
+import pregeneratedCurriculums from "../../custom_curriculums.json";
 
 export default function CoursePortal() {
   const [activeChapterIdx, setActiveChapterIdx] = useState<number>(0);
@@ -38,30 +39,39 @@ export default function CoursePortal() {
     chapters: CourseChapter[];
     createdAt?: string;
   }[]>(() => {
+    let localData: any[] = [];
     const saved = localStorage.getItem("ei_custom_curriculums");
     if (saved) {
       try {
-        return JSON.parse(saved);
-      } catch (e) {
-        return [];
+        localData = JSON.parse(saved);
+      } catch (e) {}
+    } else {
+      // Backward compatibility check with single saved curriculum
+      const singleSaved = localStorage.getItem("ei_custom_curriculum");
+      if (singleSaved) {
+        try {
+          const parsed = JSON.parse(singleSaved);
+          if (parsed) {
+            localData = [{
+              id: parsed.id || "legacy_custom",
+              topic: parsed.topic || "موضوع مخصص سابق",
+              ...parsed
+            }];
+          }
+        } catch (e) {}
       }
     }
-    // Backward compatibility check with single saved curriculum
-    const singleSaved = localStorage.getItem("ei_custom_curriculum");
-    if (singleSaved) {
-      try {
-        const parsed = JSON.parse(singleSaved);
-        if (parsed) {
-          const item = {
-            id: parsed.id || "legacy_custom",
-            topic: parsed.topic || "موضوع مخصص سابق",
-            ...parsed
-          };
-          return [item];
+
+    // Merge static pre-generated curricula with dynamic user-generated curricula in localStorage
+    const merged = Array.isArray(pregeneratedCurriculums) ? [...pregeneratedCurriculums] : [];
+    if (Array.isArray(localData)) {
+      localData.forEach((p: any) => {
+        if (p && p.id && !merged.some(m => m.id === p.id)) {
+          merged.push(p);
         }
-      } catch (e) {}
+      });
     }
-    return [];
+    return merged as any[];
   });
 
   const [activeCustomCurriculumId, setActiveCustomCurriculumId] = useState<string>(() => {
