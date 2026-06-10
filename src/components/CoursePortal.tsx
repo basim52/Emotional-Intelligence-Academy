@@ -391,6 +391,48 @@ export default function CoursePortal() {
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+
+        {/* Glowing Prompt Banner when Custom Curriculum is available but standard is currently active */}
+        {activeCurriculum === "standard" && customCurriculums.length > 0 && (
+          <div className="mb-6 bg-gradient-to-r from-amber-50/70 to-[#fffef1] border-2 border-[#d4a373] rounded-3xl p-5 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-sm animate-fade-in text-right">
+            <div className="flex items-center gap-3">
+              <div className="text-2xl bg-[#d4a373]/15 p-2.5 rounded-2xl animate-pulse">🧠</div>
+              <div className="space-y-1">
+                <h4 className="font-extrabold text-[#1e3b40] text-sm sm:text-base">تنبيه ذكي: لديك منهج مخصص جاهز بالذكاء الاصطناعي! ✨</h4>
+                <p className="text-gray-600 text-xs leading-relaxed">
+                  لقد قمت بتوليد منهج مخصص حول مشكلات منزلك بعنوان <strong className="text-[#a47343]">« {customCurriculum?.curriculumTitle} »</strong>. اضغط على الزر لتفعيله وعرض دروسه ومواضيعه بالأسفل الآن.
+                </p>
+              </div>
+            </div>
+            <button
+              onClick={() => handleToggleCurriculum("custom")}
+              className="bg-[#d4a373] hover:bg-[#b08154] text-white font-extrabold text-xs px-5 py-3 rounded-xl shadow-sm transition-all active:scale-95 shrink-0"
+            >
+              🚀 تفعيل المنهج المولد ودراسته فوراً
+            </button>
+          </div>
+        )}
+
+        {/* Glow confirmation for active custom mode */}
+        {activeCurriculum === "custom" && customCurriculum && (
+          <div className="mb-6 bg-gradient-to-r from-emerald-50 to-[#fffef9] border-2 border-emerald-300 rounded-3xl p-5 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-sm animate-fade-in text-right">
+            <div className="flex items-center gap-3">
+              <div className="text-2xl bg-emerald-100 p-2.5 rounded-2xl shadow-inner animate-pulse">✨</div>
+              <div className="space-y-1">
+                <h4 className="font-extrabold text-emerald-900 text-sm sm:text-base">تنبيه: أنت الآن تتصفح المنهج المخصص الذكي 🧠</h4>
+                <p className="text-gray-600 text-xs leading-relaxed">
+                  هذا المنهج المطبوع مخصص لمعالجة مشكلة: <strong className="text-emerald-800">« {customCurriculum.topic} »</strong>. يمكنك التبديل والعودة للمنهج الأكاديمي الشامل في أي وقت.
+                </p>
+              </div>
+            </div>
+            <button
+              onClick={() => handleToggleCurriculum("standard")}
+              className="bg-white hover:bg-gray-50 text-emerald-850 border border-emerald-300 font-bold text-xs px-4 py-2.5 rounded-xl shadow-xs transition-all active:scale-95 shrink-0"
+            >
+              📚 العودة للمنهج الأساسي المعتمد
+            </button>
+          </div>
+        )}
         
         {/* TAB SWITCHER: Choose Between Standard Curriculum & AI Custom Curriculum */}
         <div className="mb-8 bg-white border border-[#e0dcd2] rounded-3xl p-6 shadow-sm">
@@ -687,6 +729,24 @@ export default function CoursePortal() {
                 </button>
               </div>
 
+              {/* High-visibility Curriculum Switcher inside the Lessons Sidebar! */}
+              {customCurriculums.length > 0 && customCurriculum && (
+                <div className="bg-amber-50/60 border border-amber-200/80 p-3 rounded-2xl flex items-center justify-between gap-1.5 text-xs text-[#1e3b40] font-bold shadow-sm animate-fade-in">
+                  <div className="flex flex-col text-right">
+                    <span className="text-[10px] text-[#d4a373] font-black uppercase">المنهج الفعّال حالياً:</span>
+                    <span className="text-[11px] truncate max-w-[160px] font-black text-[#1e3b40]">
+                      {activeCurriculum === "custom" ? `🔮 ${customCurriculum.curriculumTitle}` : "📚 المنهج الأساسي"}
+                    </span>
+                  </div>
+                  <button
+                    onClick={() => handleToggleCurriculum(activeCurriculum === "custom" ? "standard" : "custom")}
+                    className="bg-[#1e3b40] hover:bg-[#2a5459] text-white px-3.5 py-2 rounded-xl text-[10px] font-black transition-all flex items-center gap-1 shrink-0 active:scale-95 shadow-xs"
+                  >
+                    <span>🔄 {activeCurriculum === "custom" ? "تنشيط الأساسي" : "تنشيط المخصص 🧠"}</span>
+                  </button>
+                </div>
+              )}
+
               {/* Accordion / List of Chapters */}
               <div className="space-y-4 max-h-[650px] overflow-y-auto pr-1">
                 {chaptersToUse.map((chap, chapIdx) => {
@@ -715,7 +775,7 @@ export default function CoursePortal() {
                             <span className="text-[10px] text-[#d4a373] font-bold block">الفصل {chap.chapterNum}</span>
                             <h4 className="font-extrabold text-[#1e3b40] text-sm leading-snug">{chap.title}</h4>
                             <span className="text-[10px] text-gray-500 block">
-                              المقروء: {completedLessonsInChapCount} / 3 دروس
+                              المقروء: {completedLessonsInChapCount} / {chap.lessons.length} دروس
                             </span>
                           </div>
                         </div>
