@@ -801,6 +801,32 @@ app.post("/api/gemini/save-curriculum", (req, res) => {
   res.json({ success: true, count: globalCustomCurriculums.length });
 });
 
+// Endpoint to bulk save or merge custom curriculums from client's localStorage
+app.post("/api/gemini/bulk-save", (req, res) => {
+  const { curriculums } = req.body;
+  if (!Array.isArray(curriculums)) {
+    return res.status(400).json({ error: "البيانات المرسلة غير صالحة" });
+  }
+  
+  let addedCount = 0;
+  curriculums.forEach((clientCurr: any) => {
+    if (clientCurr && clientCurr.id) {
+      const idx = globalCustomCurriculums.findIndex(c => c.id === clientCurr.id);
+      if (idx !== -1) {
+        globalCustomCurriculums[idx] = clientCurr;
+      } else {
+        globalCustomCurriculums.unshift(clientCurr);
+        addedCount++;
+      }
+    }
+  });
+
+  if (curriculums.length > 0) {
+    saveCurriculumsToDisk();
+  }
+  res.json({ success: true, total: globalCustomCurriculums.length, added: addedCount });
+});
+
 // Configure Vite middleware / Serve static files
 async function startServer() {
   if (process.env.NODE_ENV !== "production") {

@@ -143,6 +143,53 @@ export default function CoursePortal() {
   const [showQuizResult, setShowQuizResult] = useState<boolean>(false);
   const [quizScore, setQuizScore] = useState<number>(0);
 
+  // GitHub & Vercel Sync States
+  const [isSyncingServer, setIsSyncingServer] = useState<boolean>(false);
+  const [syncSuccessMsg, setSyncSuccessMsg] = useState<string>("");
+  const [copySuccess, setCopySuccess] = useState<boolean>(false);
+
+  const handleSyncToServerDisk = async () => {
+    setIsSyncingServer(true);
+    setSyncSuccessMsg("");
+    try {
+      const response = await fetch("/api/gemini/bulk-save", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ curriculums: customCurriculums })
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setSyncSuccessMsg(`تمت مزامنة المناهج الـ ${data.total} بنجاح وحفظها في الكود المصدري للمشروع!`);
+        setTimeout(() => setSyncSuccessMsg(""), 5000);
+      } else {
+        throw new Error("فشل إرسال المزامنة للغرس في ملف الخادم");
+      }
+    } catch (err: any) {
+      console.error(err);
+      alert("⚠️ حدث خطأ أثناء الاتصال بالخادم لمزامنة المناهج: " + err.message);
+    } finally {
+      setIsSyncingServer(false);
+    }
+  };
+
+  const handleCopyJson = () => {
+    navigator.clipboard.writeText(JSON.stringify(customCurriculums, null, 2));
+    setCopySuccess(true);
+    setTimeout(() => setCopySuccess(false), 3000);
+  };
+
+  const handleDownloadJson = () => {
+    const blob = new Blob([JSON.stringify(customCurriculums, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "custom_curriculums.json";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
   // Sync completion states to localStorage
   useEffect(() => {
     localStorage.setItem("ei_completed_lessons", JSON.stringify(completedLessons));
@@ -637,6 +684,93 @@ export default function CoursePortal() {
                 </div>
               </button>
             )}
+          </div>
+        </div>
+
+        {/* GitHub & Vercel Curriculum Sync Center */}
+        <div id="github-sync-center" className="mb-10 bg-[#faf8f5] border border-[#e0dcd2] rounded-3xl p-6 shadow-sm text-right relative overflow-hidden">
+          <div className="absolute right-0 top-0 w-32 h-32 bg-[#d4a373]/5 rounded-full pointer-events-none"></div>
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-5 pb-4 border-b border-gray-200">
+            <div className="space-y-1">
+              <span className="text-[10px] bg-[#1e3b40]/10 text-[#1e3b40] font-black px-2.5 py-1 rounded-md uppercase">أدوات المزامنة والنشر لـ GITHUB 🚀</span>
+              <h3 className="font-extrabold text-base text-[#1e3b40] mt-1.5 flex items-center justify-start gap-1.5">
+                <span>🔄</span> مركز مزامنة المناهج المصممة مع مستودع GitHub الخاص بك
+              </h3>
+            </div>
+            <span className="text-xs text-gray-500 font-bold bg-[#d4a373]/10 text-[#c29262] px-3 py-1 rounded-xl">
+              المناهج الحالية: {customCurriculums.length}
+            </span>
+          </div>
+
+          <div className="space-y-4 text-xs text-gray-700 leading-relaxed">
+            <p>
+              المنصات السحابية ومواقع الاستضافة مثل <strong>Vercel</strong> تكون دائمًا للقراءة فقط (Read-only) لحماية كود المنصة الفعلي، ولذلك لا يمكنها الاتصال لتحديث شفرة كود GitHub الخاص بك بشكل مباشر وتلقائي عند توليد درس أو منهج جديد.
+              لحل هذه العقبة السحابية وجعل المناهج الـ 8 المخصصة جديدة ودائمة للجميع، صممت لك هذه الأدوات المساعدة لحفظ ملف المناهج وتصديره:
+            </p>
+
+            <div className="bg-white hover:bg-[#fffef9] border border-gray-150 rounded-2xl p-4.5 space-y-3 transition-colors relative">
+              <h4 className="font-black text-[#1e3b40] text-sm flex items-center gap-1.5 mb-1.5">
+                <span className="w-5 h-5 rounded-full bg-[#1e3b40]/10 text-[#1e3b40] flex items-center justify-center text-[11px] font-black">١</span>
+                المزامنة المباشرة داخل الخادم (لنسخها لـ GitHub بضغطة واحدة من المنصة)
+              </h4>
+              <p className="text-gray-500 text-[11px]">
+                احفظ المناهج الحالية المسجلة بالمتصفح واغرسها مباشرة في ملف مشروعك الرئيسي <code>custom_curriculums.json</code> على خادم التطوير. بمجرد الضغط على هذا الزر، ستُحفظ بالكامل في الملف، وما عليك سوى الضغط على زر <strong>"Export to GitHub"</strong> أو <strong>"Sync"</strong> الموجود في شريط الأدوات العلوي بـ AI Studio لتدفق التعديلات مباشرة لمستودعك ورفعها تلقائياً بالكامل إلى Vercel!
+              </p>
+              <div className="flex flex-wrap items-center gap-3 pt-1">
+                <button
+                  onClick={handleSyncToServerDisk}
+                  disabled={isSyncingServer}
+                  className="bg-[#1e3b40] hover:bg-[#2a5459] disabled:opacity-55 text-white py-2.5 px-5 rounded-xl text-[11px] font-black transition-all flex items-center gap-1.5 shadow-xs cursor-pointer active:scale-95"
+                >
+                  {isSyncingServer ? "⏳ جاري غرس المناهج بالخادم..." : "💾 حفظ ومزامنة المناهج في كود المشروع"}
+                </button>
+                {syncSuccessMsg && (
+                  <span className="text-emerald-700 font-bold bg-emerald-50 border border-emerald-200 py-2 px-3.5 rounded-xl text-[11px] animate-fade-in">
+                    {syncSuccessMsg}
+                  </span>
+                )}
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="bg-white border border-gray-150 rounded-2xl p-4.5 space-y-2 flex flex-col justify-between">
+                <div className="space-y-1.5">
+                  <h4 className="font-black text-[#1e3b40] text-xs flex items-center gap-1.5">
+                    <span>📥</span> تحميل ملف المناهج لتحديث GitHub يدوياً
+                  </h4>
+                  <p className="text-gray-400 text-[11px]">
+                    قم بتحميل ملف <code>custom_curriculums.json</code> كاملاً إلى جهازك بضغطة زر مجهزة، وضعه مباشرة في مجلد مشروعك الرئيسي، ثم ارفعه يدوياً إلى مستودع GitHub عبر سطر الأوامر أو الواجهة الرسومية.
+                  </p>
+                </div>
+                <div className="pt-2">
+                  <button
+                    onClick={handleDownloadJson}
+                    className="w-full bg-[#faf8f5] hover:bg-gray-100 text-[#1e3b45] border border-gray-200 py-2.5 px-4 rounded-xl text-[11px] font-black transition-all flex items-center justify-center gap-1.5 cursor-pointer active:scale-95"
+                  >
+                    🚀 تحميل ملف custom_curriculums.json
+                  </button>
+                </div>
+              </div>
+
+              <div className="bg-white border border-gray-150 rounded-2xl p-4.5 space-y-2 flex flex-col justify-between">
+                <div className="space-y-1.5">
+                  <h4 className="font-black text-[#1e3b40] text-xs flex items-center gap-1.5">
+                    <span>📋</span> نسخ كود الـ JSON بالكامل
+                  </h4>
+                  <p className="text-gray-400 text-[11px]">
+                    انسخ هيكل ومحتوى المناهج المخصصة بالكامل بصيغة JSON القياسية بضغطة واحدة، لتعديل محتوى الملف أو حفظه كنسخة احتياطية آمنة في أي مكان أردته.
+                  </p>
+                </div>
+                <div className="pt-2">
+                  <button
+                    onClick={handleCopyJson}
+                    className="w-full bg-[#faf8f5] hover:bg-gray-150 text-[#1e3b45] border border-gray-200 py-2.5 px-4 rounded-xl text-[11px] font-black transition-all flex items-center justify-center gap-1.5 relative overflow-hidden cursor-pointer active:scale-95"
+                  >
+                    {copySuccess ? "✅ تم نسخ الكود للذاكرة بنجاح!" : "📋 نسخ كود الـ JSON بالكامل"}
+                  </button>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
 
