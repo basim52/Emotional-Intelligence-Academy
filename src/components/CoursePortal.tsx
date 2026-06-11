@@ -134,6 +134,8 @@ export default function CoursePortal() {
     return !!localStorage.getItem("ei_student_name");
   });
 
+  const [copyStatus, setCopyStatus] = useState<boolean>(false);
+
   // Reading settings
   const [readerFontSize, setReaderFontSize] = useState<"base" | "lg" | "xl">("lg");
 
@@ -300,6 +302,22 @@ export default function CoursePortal() {
     setActiveChapterIdx(0);
     setActiveLessonIdx(0);
     setShowQuizResult(false);
+  };
+
+  const handleCopyJSON = () => {
+    navigator.clipboard.writeText(JSON.stringify(customCurriculums, null, 2));
+    setCopyStatus(true);
+    setTimeout(() => setCopyStatus(false), 3050);
+  };
+
+  const handleDownloadJSON = () => {
+    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(customCurriculums, null, 2));
+    const downloadAnchor = document.createElement('a');
+    downloadAnchor.setAttribute("href", dataStr);
+    downloadAnchor.setAttribute("download", "custom_curriculums.json");
+    document.body.appendChild(downloadAnchor);
+    downloadAnchor.click();
+    downloadAnchor.remove();
   };
 
   const handleGenerateCurriculum = async (topicStr: string) => {
@@ -640,6 +658,70 @@ export default function CoursePortal() {
                 </div>
               </button>
             )}
+          </div>
+        </div>
+
+        {/* Export and Vercel Transfer Center */}
+        <div id="transfer-center" className="mb-8 bg-gradient-to-br from-amber-500/5 via-amber-600/[0.02] to-transparent border border-[#d4a373]/30 rounded-3xl p-6 shadow-xs text-right">
+          <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 border-b border-gray-100 pb-4 mb-4">
+            <div className="space-y-1 text-right">
+              <span className="inline-block bg-[#d4a373]/15 text-[#a47343] text-[10px] font-bold px-2.5 py-0.5 rounded-full uppercase">
+                مركز نقل المناهج وتصديرها للموقع الخارجي 🚀
+              </span>
+              <h3 className="font-extrabold text-[#1e3b40] text-base flex justify-start items-center gap-2 mt-1">
+                تصدير المناهج الـ ({customCurriculums.length}) المخصصة النشطة ومزامنتها مع Vercel
+              </h3>
+              <p className="text-gray-550 text-xs leading-relaxed max-w-3xl">
+                لقد قمت بتصميم <strong className="text-[#a47343]">{customCurriculums.length} مناهج ممتازة وذكية</strong> بالذكاء الاصطناعي هنا. لنقلها إلى موقعك الآخر <a href="https://emotional-intelligence-academy.vercel.app/" target="_blank" rel="noreferrer" className="text-[#a47343] underline font-bold hover:text-[#1e3b40] transition-colors">emotional-intelligence-academy.vercel.app</a> ومطابقتها بالكامل بضغطة زر:
+              </p>
+            </div>
+            
+            <div className="flex flex-wrap gap-2.5 w-full lg:w-auto">
+              <button
+                onClick={handleCopyJSON}
+                className="flex-grow lg:flex-none bg-[#1e3b40] hover:bg-[#2a5459] text-white px-5 py-3 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-1.5 shadow-sm active:scale-95 cursor-pointer"
+              >
+                {copyStatus ? "✅ تم نسخ الكود!" : "📋 نسخ كود JSON الكامل"}
+              </button>
+              <button
+                onClick={handleDownloadJSON}
+                className="flex-grow lg:flex-none bg-[#d4a373] hover:bg-[#b08154] text-white px-5 py-3 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-1.5 shadow-sm active:scale-95 cursor-pointer"
+              >
+                📥 تحميل ملف custom_curriculums.json
+              </button>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs text-gray-600 leading-relaxed pt-2">
+            <div className="bg-white p-4.5 rounded-2xl border border-gray-150 space-y-1.5">
+              <div className="font-extrabold text-[#1e3b40] flex items-center gap-1.5">
+                <span className="w-5 h-5 rounded-full bg-[#1e3b40]/10 text-[#1e3b40] flex items-center justify-center text-[10px] font-black">١</span>
+                تحميل أو نسخ المحتوى
+              </div>
+              <p className="text-gray-500">
+                اضغط على زر <strong>تحميل الملف</strong> باللون الرملي للحصول على ملف <code>custom_curriculums.json</code> المحدث، أو انسخ كود JSON بالكامل مباشرة لتبديله.
+              </p>
+            </div>
+
+            <div className="bg-white p-4.5 rounded-2xl border border-gray-150 space-y-1.5">
+              <div className="font-extrabold text-[#1e3b40] flex items-center gap-1.5">
+                <span className="w-5 h-5 rounded-full bg-[#1e3b40]/10 text-[#1e3b40] flex items-center justify-center text-[10px] font-black">٢</span>
+                استبدال الملف في الكود
+              </div>
+              <p className="text-gray-550">
+                افتح مجلد مشروع Vercel الخاص بك، واستبدل كامل محتويات الملف <code>custom_curriculums.json</code> الموجود في المجلد الرئيسي بهذه البيانات المحدثة التي تملك الـ {customCurriculums.length} مناهج.
+              </p>
+            </div>
+
+            <div className="bg-white p-4.5 rounded-2xl border border-gray-150 space-y-1.5">
+              <div className="font-extrabold text-[#1e3b40] flex items-center gap-1.5">
+                <span className="w-5 h-5 rounded-full bg-[#1e3b40]/10 text-[#1e3b40] flex items-center justify-center text-[10px] font-black">٣</span>
+                مزامنة ونشر التعديل (Deploy)
+              </div>
+              <p className="text-gray-500">
+                ارفع التحديث إلى مستودع GitHub الخاص بمشروعك (Git Push). وسيقوم Vercel تلقائياً ببناء المنصة وعرض الفصول الـ 8 الرائعة هناك فوراً!
+              </p>
+            </div>
           </div>
         </div>
 
