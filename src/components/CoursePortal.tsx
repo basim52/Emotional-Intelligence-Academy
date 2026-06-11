@@ -146,11 +146,13 @@ export default function CoursePortal() {
   // GitHub & Vercel Sync States
   const [isSyncingServer, setIsSyncingServer] = useState<boolean>(false);
   const [syncSuccessMsg, setSyncSuccessMsg] = useState<string>("");
+  const [syncErrorMsg, setSyncErrorMsg] = useState<string>("");
   const [copySuccess, setCopySuccess] = useState<boolean>(false);
 
   const handleSyncToServerDisk = async () => {
     setIsSyncingServer(true);
     setSyncSuccessMsg("");
+    setSyncErrorMsg("");
     try {
       const response = await fetch("/api/gemini/bulk-save", {
         method: "POST",
@@ -160,13 +162,22 @@ export default function CoursePortal() {
       if (response.ok) {
         const data = await response.json();
         setSyncSuccessMsg(`تمت مزامنة المناهج الـ ${data.total} بنجاح وحفظها في الكود المصدري للمشروع!`);
-        setTimeout(() => setSyncSuccessMsg(""), 5000);
+        setTimeout(() => setSyncSuccessMsg(""), 7000);
       } else {
-        throw new Error("فشل إرسال المزامنة للغرس في ملف الخادم");
+        let errMsg = `فشل الخادم في حفظ الملف (الرمز ${response.status}).`;
+        try {
+          const errData = await response.json();
+          if (errData.error) errMsg += ` التفاصيل: ${errData.error}`;
+        } catch (_) {}
+        throw new Error(errMsg);
       }
     } catch (err: any) {
       console.error(err);
-      alert("⚠️ حدث خطأ أثناء الاتصال بالخادم لمزامنة المناهج: " + err.message);
+      const isVercel = window.location.hostname.includes("vercel.app");
+      const explanation = isVercel 
+        ? "مستضيف Vercel السحابي يمنع الكتابة المباشرة لحماية الملفات (Read-only System). لا قلق على الإطلاق! يمكنك بسهولة تحميل ملف 'custom_curriculums.json' بالزر أدناه، ورفعه يدوياً إلى مستودع GitHub الخاص بك ليتم تحديث المنصة نهائياً للجميع."
+        : `تعذر الاتصال بخادم التطوير لتسجيل التعديلات: ${err.message}. يمكنك تحميل ملف JSON يدوياً عبر الأزرار وتثبيته في كود مشروعك بـ GitHub.`;
+      setSyncErrorMsg(explanation);
     } finally {
       setIsSyncingServer(false);
     }
@@ -716,18 +727,43 @@ export default function CoursePortal() {
               <p className="text-gray-500 text-[11px]">
                 احفظ المناهج الحالية المسجلة بالمتصفح واغرسها مباشرة في ملف مشروعك الرئيسي <code>custom_curriculums.json</code> على خادم التطوير. بمجرد الضغط على هذا الزر، ستُحفظ بالكامل في الملف، وما عليك سوى الضغط على زر <strong>"Export to GitHub"</strong> أو <strong>"Sync"</strong> الموجود في شريط الأدوات العلوي بـ AI Studio لتدفق التعديلات مباشرة لمستودعك ورفعها تلقائياً بالكامل إلى Vercel!
               </p>
-              <div className="flex flex-wrap items-center gap-3 pt-1">
-                <button
-                  onClick={handleSyncToServerDisk}
-                  disabled={isSyncingServer}
-                  className="bg-[#1e3b40] hover:bg-[#2a5459] disabled:opacity-55 text-white py-2.5 px-5 rounded-xl text-[11px] font-black transition-all flex items-center gap-1.5 shadow-xs cursor-pointer active:scale-95"
-                >
-                  {isSyncingServer ? "⏳ جاري غرس المناهج بالخادم..." : "💾 حفظ ومزامنة المناهج في كود المشروع"}
-                </button>
-                {syncSuccessMsg && (
-                  <span className="text-emerald-700 font-bold bg-emerald-50 border border-emerald-200 py-2 px-3.5 rounded-xl text-[11px] animate-fade-in">
-                    {syncSuccessMsg}
-                  </span>
+              <div className="flex flex-col gap-3 pt-1 w-full">
+                <div className="flex flex-wrap items-center gap-3">
+                  <button
+                    onClick={handleSyncToServerDisk}
+                    disabled={isSyncingServer}
+                    className="bg-[#1e3b40] hover:bg-[#2a5459] disabled:opacity-55 text-white py-2.5 px-5 rounded-xl text-[11px] font-black transition-all flex items-center gap-1.5 shadow-xs cursor-pointer active:scale-95"
+                  >
+                    {isSyncingServer ? "⏳ جاري غرس المناهج بالخادم..." : "💾 حفظ ومزامنة المناهج في كود المشروع"}
+                  </button>
+                  {syncSuccessMsg && (
+                    <span className="text-emerald-700 font-bold bg-emerald-50 border border-emerald-200 py-2 px-3.5 rounded-xl text-[11px] animate-fade-in">
+                      {syncSuccessMsg}
+                    </span>
+                  )}
+                </div>
+
+                {syncErrorMsg && (
+                  <div className="w-full p-4 bg-amber-50 border border-amber-200 text-amber-900 rounded-2xl text-[11px] leading-relaxed animate-fade-in space-y-2">
+                    <div className="font-extrabold flex items-center gap-1.5 text-amber-850">
+                      <span>💡</span> توضيح تقني هام لبيئة العمل النشطة:
+                    </div>
+                    <p className="text-gray-700">{syncErrorMsg}</p>
+                    <div className="pt-1 flex flex-wrap gap-2">
+                      <button
+                        onClick={handleDownloadJson}
+                        className="bg-amber-600 hover:bg-amber-700 text-white font-black py-2 px-3.5 rounded-xl text-[10px] transition-all cursor-pointer shadow-xs active:scale-95"
+                      >
+                        📥 تحميل ملف custom_curriculums.json الآن
+                      </button>
+                      <button
+                        onClick={handleCopyJson}
+                        className="bg-white hover:bg-gray-100 text-gray-850 border border-gray-200 font-bold py-2 px-3.5 rounded-xl text-[10px] transition-all cursor-pointer active:scale-95"
+                      >
+                        👥 {copySuccess ? "✅ تم النسخ!" : "📋 نسخ كود الـ JSON للذاكرة"}
+                      </button>
+                    </div>
+                  </div>
                 )}
               </div>
             </div>
